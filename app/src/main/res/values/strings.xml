@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ExampleReg</string>
+    <integer name="com_vk_sdk_AppId">7225522</integer>
+</resources>
