@@ -1,0 +1,1515 @@
+From 5172d5f6264f56e2e7152292f1258e352b2387d5 Mon Sep 17 00:00:00 2001
+From: Denis <la2aang1337@yandex.ru>
+Date: Thu, 23 Jan 2020 05:37:19 +0300
+Subject: Add DB
+
+
+diff --git a/app/build.gradle b/app/build.gradle
+index 302763e..ef6ebf2 100644
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -6,7 +6,7 @@ android {
+     buildToolsVersion "29.0.2"
+     defaultConfig {
+         applicationId "com.example.examplereg"
+-        minSdkVersion 15
++        minSdkVersion 21
+         targetSdkVersion 29
+         versionCode 1
+         versionName "1.0"
+@@ -28,11 +28,23 @@ dependencies {
+     implementation 'com.google.firebase:firebase-auth:16.1.0'
+     implementation 'com.google.firebase:firebase-core:16.0.6'
+     implementation 'com.firebaseui:firebase-ui-auth:4.3.1'
++    //implementation 'com.google.firebase:firebase-database:19.2.0'
++
++
++
++
++
+ 
+     implementation fileTree(dir: 'libs', include: ['*.jar'])
+-    implementation 'com.android.support:appcompat-v7:20.0.0'
++    //implementation 'com.android.support:appcompat-v7:20.0.0'
+     implementation 'com.vk:androidsdk:1.6.7'
+ 
++    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
++    implementation 'com.google.android.material:material:1.0.0'
++    implementation 'androidx.navigation:navigation-fragment:2.0.0'
++    implementation 'androidx.navigation:navigation-ui:2.0.0'
++    implementation 'androidx.lifecycle:lifecycle-extensions:2.0.0'
++    implementation 'com.google.firebase:firebase-database:16.0.4'
+     testImplementation 'junit:junit:4.12'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+diff --git a/app/google-services.json b/app/google-services.json
+index d7f7b3d..4621a9e 100644
+--- a/app/google-services.json
++++ b/app/google-services.json
+@@ -14,6 +14,14 @@
+         }
+       },
+       "oauth_client": [
++        {
++          "client_id": "980331253183-87f27cjnqg89gct4oprssql5s1fo9lk4.apps.googleusercontent.com",
++          "client_type": 1,
++          "android_info": {
++            "package_name": "com.example.examplereg",
++            "certificate_hash": "1f4efd696ff74f2da450defad37fc3aedc42d5ec"
++          }
++        },
+         {
+           "client_id": "980331253183-ddu32rpepmmsplvevk5geu6lpt3h2b6h.apps.googleusercontent.com",
+           "client_type": 1,
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 8d70db9..388b012 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -2,24 +2,25 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:tools="http://schemas.android.com/tools"
+     package="com.example.examplereg">
++    <uses-sdk
++        tools:overrideLibrary="com.firebase.ui.auth" />
+ 
+     <uses-permission android:name="android.permission.INTERNET" />
+     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+ 
+-    <uses-sdk tools:overrideLibrary="com.firebase.ui.auth"/>
+-
+     <application
++        android:name=".VkApp"
+         android:allowBackup="true"
+         android:icon="@mipmap/ic_launcher"
+         android:label="@string/app_name"
+         android:roundIcon="@mipmap/ic_launcher_round"
+         android:supportsRtl="true"
+-        android:theme="@style/AppTheme"
+-        android:name=".VkApp">
+-
+-        <activity android:name=".MainActivity2">
+-
+-        </activity>
++        android:theme="@style/AppTheme">
++        <activity
++            android:name=".MainActivity_Navigation"
++            android:label="@string/title_activity_main__navigation"
++            android:theme="@style/AppTheme.NoActionBar"></activity>
++        <activity android:name=".MainActivity2"></activity>
+         <activity android:name=".MainActivity">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+@@ -29,4 +30,4 @@
+         </activity>
+     </application>
+ 
+-</manifest>
+\ No newline at end of file
++</manifest>
+diff --git a/app/src/main/java/com/example/examplereg/MainActivity.java b/app/src/main/java/com/example/examplereg/MainActivity.java
+index f1846d0..7e1c3fa 100644
+--- a/app/src/main/java/com/example/examplereg/MainActivity.java
++++ b/app/src/main/java/com/example/examplereg/MainActivity.java
+@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
+ import android.content.Intent;
+ import android.os.Bundle;
+ import android.view.View;
++import android.widget.ArrayAdapter;
+ import android.widget.Button;
+ import android.widget.EditText;
+ import android.widget.ImageButton;
+@@ -17,15 +18,31 @@ import com.google.android.gms.tasks.Task;
+ import com.google.firebase.auth.AuthResult;
+ import com.google.firebase.auth.FirebaseAuth;
+ import com.google.firebase.auth.FirebaseUser;
++import com.google.firebase.database.DataSnapshot;
++import com.google.firebase.database.DatabaseError;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++import com.google.firebase.database.GenericTypeIndicator;
++import com.google.firebase.database.ValueEventListener;
+ import com.vk.sdk.VKAccessToken;
+ import com.vk.sdk.VKAccessTokenTracker;
+ import com.vk.sdk.VKCallback;
+ import com.vk.sdk.VKScope;
+ import com.vk.sdk.VKSdk;
++import com.vk.sdk.api.VKApi;
++import com.vk.sdk.api.VKApiConst;
+ import com.vk.sdk.api.VKError;
++import com.vk.sdk.api.VKParameters;
++import com.vk.sdk.api.VKRequest;
++import com.vk.sdk.api.VKResponse;
+ import com.vk.sdk.util.VKUtil;
+ 
++import org.json.JSONArray;
++import org.json.JSONException;
++import org.json.JSONObject;
++
+ import java.util.Arrays;
++import java.util.HashMap;
+ import java.util.List;
+ 
+ public class MainActivity extends AppCompatActivity {
+@@ -34,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
+     private FirebaseAuth mAuth;
+     private FirebaseAuth.AuthStateListener mAuthListener;
+ 
++    private DatabaseReference myRef;
++    private HashMap<String,String> DiscrTasks;
+     private String[] scope = new String[]{VKScope.EMAIL};
+ 
+     Button registration;
+@@ -43,11 +62,49 @@ public class MainActivity extends AppCompatActivity {
+     EditText log;
+     EditText pass;
+     TextView label;
++
++
++
++    public void updateUI()
++    {
++        myRef = FirebaseDatabase.getInstance().getReference();
++        FirebaseUser user = mAuth.getCurrentUser();
++        String str= user.getUid().toString();
++
++       /* FirebaseDatabase database = FirebaseDatabase.getInstance();
++        DatabaseReference myRef = database.getReference("UvbprWzQtohKYAUjCllGsUt9OeB2");
++
++        //myRef.setValue("Hello, World!");*/
++        myRef.child(str).addValueEventListener(new ValueEventListener() {
++            @Override
++            public void onDataChange( DataSnapshot dataSnapshot) {
++                GenericTypeIndicator<HashMap<String,String>> t = new GenericTypeIndicator<HashMap<String,String>>() {};
++                DiscrTasks = dataSnapshot.getValue(t);
++                Intent MainActivity2 = new Intent(MainActivity.this, MainActivity_Navigation.class);
++                MainActivity2.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
++                MainActivity2.putExtra("first_name", ""+DiscrTasks.get("first_name").toString());
++                MainActivity2.putExtra("second_name", ""+DiscrTasks.get("second_name").toString());
++                MainActivity2.putExtra("Flag", "mAuth");
++
++                startActivity(MainActivity2);
++
++            }
++
++            @Override
++            public void onCancelled(@NonNull DatabaseError databaseError) {
++
++            }
++        });
++
++    }
++
+     @Override
+     protected void onCreate(Bundle savedInstanceState)
+     {
+         super.onCreate(savedInstanceState);
+         setContentView(R.layout.activity_main);
++        myRef = FirebaseDatabase.getInstance().getReference();
++
+ 
+         mAuth = FirebaseAuth.getInstance();
+ 
+@@ -79,6 +136,9 @@ public class MainActivity extends AppCompatActivity {
+ 
+             }
+         };
++
++
++
+         //клик регистрации
+         View.OnClickListener clickregistration = new View.OnClickListener()
+     {
+@@ -93,7 +153,14 @@ public class MainActivity extends AppCompatActivity {
+                         {
+                             if(task.isSuccessful())
+                             {
++                                FirebaseUser user = mAuth.getCurrentUser();
++                                String str= user.getUid().toString();
++
++                                FirebaseDatabase database = FirebaseDatabase.getInstance();
++                                DatabaseReference myRef = database.getReference(str);
+ 
++                                myRef.child("first_name").setValue("InsertName");
++                                myRef.child("second_name").setValue("InsertName");
+                                 Toast.makeText(MainActivity.this, "Регистрация успешна", Toast.LENGTH_SHORT).show();
+ 
+                             }
+@@ -115,10 +182,10 @@ public class MainActivity extends AppCompatActivity {
+                     @Override
+                     public void onComplete(@NonNull Task<AuthResult> task) {
+                         if(task.isSuccessful()) {
+-                            Intent MainActivity2 = new Intent(MainActivity.this, MainActivity2.class);
+-                            MainActivity2.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+-                            startActivity(MainActivity2);
+-                            Toast.makeText(MainActivity.this, "Aвторизация успешна", Toast.LENGTH_SHORT).show();
++
++                            updateUI();
++                            Toast.makeText( MainActivity.this, "Aвторизация успешна", Toast.LENGTH_SHORT).show();
++
+                         }else
+                             Toast.makeText(MainActivity.this, "Aвторизация провалена", Toast.LENGTH_SHORT).show();
+ 
+@@ -145,17 +212,65 @@ public class MainActivity extends AppCompatActivity {
+ 
+ 
+     }
+-
++    private VKAccessToken AccessTOKEN;
+     @Override
+     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+         if (!VKSdk.onActivityResult(requestCode, resultCode, data, new VKCallback<VKAccessToken>() {
+             @Override
+             public void onResult(VKAccessToken res) {
+ // Пользователь успешно авторизовался
+-                Intent MainActivity2 = new Intent(MainActivity.this, MainActivity2.class);
+-                startActivity(MainActivity2);
++
+                 Toast.makeText(MainActivity.this, "Aвторизация успешна", Toast.LENGTH_SHORT).show();
++                AccessTOKEN =res;
++                VKRequest request = VKApi.users().get(VKParameters.from(VKApiConst.FIELDS,"first_name, last_name"));
++                request.executeWithListener(new VKRequest.VKRequestListener() {
++                    @Override
++                    public void onComplete(VKResponse response) {
++                        JSONObject jObject=new JSONObject();
++                        String firstname="InsertName",secondname="InsertName",id="nul";
++                        try {
++
++                             jObject = new JSONObject(response.responseString);
++                             JSONArray jsonArray = jObject.getJSONArray("response");
++                            for (int i = 0; i < jsonArray.length(); i++) {
++                                JSONObject jsonObject = jsonArray.getJSONObject(i);
++
++                                firstname = jsonObject.getString("first_name");
++                                secondname = jsonObject.getString("last_name");
++                                id = jsonObject.getString("id");
++
++                            }
++                            FirebaseDatabase database = FirebaseDatabase.getInstance();
++                            String var = AccessTOKEN.accessToken.toString();
++                            DatabaseReference myRef = database.getReference(id);
++
++                            myRef.child("first_name").setValue(firstname);
++                            myRef.child("second_name").setValue(secondname);
++
++                            Intent MainActivity2 = new Intent(MainActivity.this, MainActivity_Navigation.class);
++                            MainActivity2.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
++                            MainActivity2.putExtra("first_name", ""+firstname);
++                            MainActivity2.putExtra("second_name", ""+secondname);
++                            MainActivity2.putExtra("id", id);
++                            MainActivity2.putExtra("Flag", "VK");
++
++                            startActivity(MainActivity2);
++                        } catch (JSONException e) {
++                            Toast.makeText(MainActivity.this, "Ошибка получения имени фамилии", Toast.LENGTH_SHORT).show();
++                        }
++
++                    }
++                    @Override
++                    public void onError(VKError error) {
++//Do error stuff
++                    }
++                    @Override
++                    public void attemptFailed(VKRequest request, int attemptNumber, int totalAttempts) {
++//I don't really believe in progress
++                    }
++                });
+ 
++String var="22";
+             }
+             @Override
+             public void onError(VKError error) {
+diff --git a/app/src/main/java/com/example/examplereg/MainActivity_Navigation.java b/app/src/main/java/com/example/examplereg/MainActivity_Navigation.java
+new file mode 100644
+index 0000000..fb04a05
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/MainActivity_Navigation.java
+@@ -0,0 +1,69 @@
++package com.example.examplereg;
++
++import android.os.Bundle;
++
++import com.google.android.material.floatingactionbutton.FloatingActionButton;
++import com.google.android.material.snackbar.Snackbar;
++
++import android.view.View;
++
++import androidx.navigation.NavController;
++import androidx.navigation.Navigation;
++import androidx.navigation.ui.AppBarConfiguration;
++import androidx.navigation.ui.NavigationUI;
++
++import com.google.android.material.navigation.NavigationView;
++
++import androidx.drawerlayout.widget.DrawerLayout;
++
++import androidx.appcompat.app.AppCompatActivity;
++import androidx.appcompat.widget.Toolbar;
++
++import android.view.Menu;
++
++public class MainActivity_Navigation extends AppCompatActivity {
++
++    private AppBarConfiguration mAppBarConfiguration;
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_main__navigation);
++        Toolbar toolbar = findViewById(R.id.toolbar);
++        setSupportActionBar(toolbar);
++        FloatingActionButton fab = findViewById(R.id.fab);
++        fab.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View view) {
++                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
++                        .setAction("Action", null).show();
++            }
++        });
++        DrawerLayout drawer = findViewById(R.id.drawer_layout);
++        NavigationView navigationView = findViewById(R.id.nav_view);
++        // Passing each menu ID as a set of Ids because each
++        // menu should be considered as top level destinations.
++        mAppBarConfiguration = new AppBarConfiguration.Builder(
++                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow,
++                R.id.nav_tools, R.id.nav_share, R.id.nav_send)
++                .setDrawerLayout(drawer)
++                .build();
++        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
++        NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
++        NavigationUI.setupWithNavController(navigationView, navController);
++    }
++
++    @Override
++    public boolean onCreateOptionsMenu(Menu menu) {
++        // Inflate the menu; this adds items to the action bar if it is present.
++        getMenuInflater().inflate(R.menu.main_activity__navigation, menu);
++        return true;
++    }
++
++    @Override
++    public boolean onSupportNavigateUp() {
++        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
++        return NavigationUI.navigateUp(navController, mAppBarConfiguration)
++                || super.onSupportNavigateUp();
++    }
++}
+diff --git a/app/src/main/java/com/example/examplereg/ui/gallery/GalleryFragment.java b/app/src/main/java/com/example/examplereg/ui/gallery/GalleryFragment.java
+new file mode 100644
+index 0000000..3b0edee
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/gallery/GalleryFragment.java
+@@ -0,0 +1,35 @@
++package com.example.examplereg.ui.gallery;
++
++import android.os.Bundle;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.TextView;
++
++import androidx.annotation.Nullable;
++import androidx.annotation.NonNull;
++import androidx.fragment.app.Fragment;
++import androidx.lifecycle.Observer;
++import androidx.lifecycle.ViewModelProviders;
++
++import com.example.examplereg.R;
++
++public class GalleryFragment extends Fragment {
++
++    private GalleryViewModel galleryViewModel;
++
++    public View onCreateView(@NonNull LayoutInflater inflater,
++                             ViewGroup container, Bundle savedInstanceState) {
++        galleryViewModel =
++                ViewModelProviders.of(this).get(GalleryViewModel.class);
++        View root = inflater.inflate(R.layout.fragment_gallery, container, false);
++        final TextView textView = root.findViewById(R.id.text_gallery);
++        galleryViewModel.getText().observe(this, new Observer<String>() {
++            @Override
++            public void onChanged(@Nullable String s) {
++                textView.setText(s);
++            }
++        });
++        return root;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/gallery/GalleryViewModel.java b/app/src/main/java/com/example/examplereg/ui/gallery/GalleryViewModel.java
+new file mode 100644
+index 0000000..ffac330
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/gallery/GalleryViewModel.java
+@@ -0,0 +1,19 @@
++package com.example.examplereg.ui.gallery;
++
++import androidx.lifecycle.LiveData;
++import androidx.lifecycle.MutableLiveData;
++import androidx.lifecycle.ViewModel;
++
++public class GalleryViewModel extends ViewModel {
++
++    private MutableLiveData<String> mText;
++
++    public GalleryViewModel() {
++        mText = new MutableLiveData<>();
++        mText.setValue("This is gallery fragment");
++    }
++
++    public LiveData<String> getText() {
++        return mText;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/home/HomeFragment.java b/app/src/main/java/com/example/examplereg/ui/home/HomeFragment.java
+new file mode 100644
+index 0000000..50933cc
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/home/HomeFragment.java
+@@ -0,0 +1,35 @@
++package com.example.examplereg.ui.home;
++
++import android.os.Bundle;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.TextView;
++
++import androidx.annotation.Nullable;
++import androidx.annotation.NonNull;
++import androidx.fragment.app.Fragment;
++import androidx.lifecycle.Observer;
++import androidx.lifecycle.ViewModelProviders;
++
++import com.example.examplereg.R;
++
++public class HomeFragment extends Fragment {
++
++    private HomeViewModel homeViewModel;
++
++    public View onCreateView(@NonNull LayoutInflater inflater,
++                             ViewGroup container, Bundle savedInstanceState) {
++        homeViewModel =
++                ViewModelProviders.of(this).get(HomeViewModel.class);
++        View root = inflater.inflate(R.layout.fragment_home, container, false);
++
++        homeViewModel.getText().observe(this, new Observer<String>() {
++            @Override
++            public void onChanged(@Nullable String s) {
++
++            }
++        });
++        return root;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/home/HomeViewModel.java b/app/src/main/java/com/example/examplereg/ui/home/HomeViewModel.java
+new file mode 100644
+index 0000000..2bee1be
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/home/HomeViewModel.java
+@@ -0,0 +1,19 @@
++package com.example.examplereg.ui.home;
++
++import androidx.lifecycle.LiveData;
++import androidx.lifecycle.MutableLiveData;
++import androidx.lifecycle.ViewModel;
++
++public class HomeViewModel extends ViewModel {
++
++    private MutableLiveData<String> mText;
++
++    public HomeViewModel() {
++        mText = new MutableLiveData<>();
++        mText.setValue("This is home fragment");
++    }
++
++    public LiveData<String> getText() {
++        return mText;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/send/SendFragment.java b/app/src/main/java/com/example/examplereg/ui/send/SendFragment.java
+new file mode 100644
+index 0000000..33fe2a0
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/send/SendFragment.java
+@@ -0,0 +1,35 @@
++package com.example.examplereg.ui.send;
++
++import android.os.Bundle;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.TextView;
++
++import androidx.annotation.Nullable;
++import androidx.annotation.NonNull;
++import androidx.fragment.app.Fragment;
++import androidx.lifecycle.Observer;
++import androidx.lifecycle.ViewModelProviders;
++
++import com.example.examplereg.R;
++
++public class SendFragment extends Fragment {
++
++    private SendViewModel sendViewModel;
++
++    public View onCreateView(@NonNull LayoutInflater inflater,
++                             ViewGroup container, Bundle savedInstanceState) {
++        sendViewModel =
++                ViewModelProviders.of(this).get(SendViewModel.class);
++        View root = inflater.inflate(R.layout.fragment_send, container, false);
++        final TextView textView = root.findViewById(R.id.text_send);
++        sendViewModel.getText().observe(this, new Observer<String>() {
++            @Override
++            public void onChanged(@Nullable String s) {
++                textView.setText(s);
++            }
++        });
++        return root;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/send/SendViewModel.java b/app/src/main/java/com/example/examplereg/ui/send/SendViewModel.java
+new file mode 100644
+index 0000000..115a94c
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/send/SendViewModel.java
+@@ -0,0 +1,19 @@
++package com.example.examplereg.ui.send;
++
++import androidx.lifecycle.LiveData;
++import androidx.lifecycle.MutableLiveData;
++import androidx.lifecycle.ViewModel;
++
++public class SendViewModel extends ViewModel {
++
++    private MutableLiveData<String> mText;
++
++    public SendViewModel() {
++        mText = new MutableLiveData<>();
++        mText.setValue("This is send fragment");
++    }
++
++    public LiveData<String> getText() {
++        return mText;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/share/ShareFragment.java b/app/src/main/java/com/example/examplereg/ui/share/ShareFragment.java
+new file mode 100644
+index 0000000..e4fbf11
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/share/ShareFragment.java
+@@ -0,0 +1,35 @@
++package com.example.examplereg.ui.share;
++
++import android.os.Bundle;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.TextView;
++
++import androidx.annotation.Nullable;
++import androidx.annotation.NonNull;
++import androidx.fragment.app.Fragment;
++import androidx.lifecycle.Observer;
++import androidx.lifecycle.ViewModelProviders;
++
++import com.example.examplereg.R;
++
++public class ShareFragment extends Fragment {
++
++    private ShareViewModel shareViewModel;
++
++    public View onCreateView(@NonNull LayoutInflater inflater,
++                             ViewGroup container, Bundle savedInstanceState) {
++        shareViewModel =
++                ViewModelProviders.of(this).get(ShareViewModel.class);
++        View root = inflater.inflate(R.layout.fragment_share, container, false);
++        final TextView textView = root.findViewById(R.id.text_share);
++        shareViewModel.getText().observe(this, new Observer<String>() {
++            @Override
++            public void onChanged(@Nullable String s) {
++                textView.setText(s);
++            }
++        });
++        return root;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/share/ShareViewModel.java b/app/src/main/java/com/example/examplereg/ui/share/ShareViewModel.java
+new file mode 100644
+index 0000000..b495af1
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/share/ShareViewModel.java
+@@ -0,0 +1,19 @@
++package com.example.examplereg.ui.share;
++
++import androidx.lifecycle.LiveData;
++import androidx.lifecycle.MutableLiveData;
++import androidx.lifecycle.ViewModel;
++
++public class ShareViewModel extends ViewModel {
++
++    private MutableLiveData<String> mText;
++
++    public ShareViewModel() {
++        mText = new MutableLiveData<>();
++        mText.setValue("This is share fragment");
++    }
++
++    public LiveData<String> getText() {
++        return mText;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/slideshow/SlideshowFragment.java b/app/src/main/java/com/example/examplereg/ui/slideshow/SlideshowFragment.java
+new file mode 100644
+index 0000000..6272ea3
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/slideshow/SlideshowFragment.java
+@@ -0,0 +1,91 @@
++package com.example.examplereg.ui.slideshow;
++
++
++import android.content.Intent;
++import android.os.Bundle;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.Button;
++import android.widget.EditText;
++import android.widget.TextView;
++
++
++
++import androidx.annotation.Nullable;
++import androidx.annotation.NonNull;
++import androidx.fragment.app.Fragment;
++import androidx.lifecycle.Observer;
++import androidx.lifecycle.ViewModelProviders;
++
++
++import com.example.examplereg.R;
++import com.google.firebase.auth.FirebaseAuth;
++import com.google.firebase.auth.FirebaseUser;
++import com.google.firebase.database.DatabaseReference;
++import com.google.firebase.database.FirebaseDatabase;
++
++import org.w3c.dom.Text;
++
++public class SlideshowFragment extends Fragment {
++
++    private SlideshowViewModel slideshowViewModel;
++    Button SaveButton;
++    TextView text_slideshow;
++    EditText first_name, second_name;
++
++    String Flag="nul",id="nul";
++    private FirebaseAuth mAuth;
++    private DatabaseReference myRef;
++
++    public View onCreateView(@NonNull LayoutInflater inflater,
++                             ViewGroup container, Bundle savedInstanceState) {
++        slideshowViewModel =
++                ViewModelProviders.of(this).get(SlideshowViewModel.class);
++        View root = inflater.inflate(R.layout.fragment_slideshow, container, false);
++
++
++        first_name = (EditText) root.findViewById(R.id.editText);
++        second_name = (EditText)  root.findViewById(R.id.editText2);
++        SaveButton = (Button) root.findViewById(R.id.button);
++
++        Intent intent = getActivity().getIntent();
++        first_name.setText(intent.getStringExtra("first_name"));
++        second_name.setText(intent.getStringExtra("second_name"));
++        Flag= intent.getStringExtra("Flag");
++        id= intent.getStringExtra("id");
++        mAuth = FirebaseAuth.getInstance();
++
++
++
++        SaveButton.setOnClickListener(clickSaveButton);
++
++        return root;
++
++    }
++
++    //клик сохранения
++    View.OnClickListener clickSaveButton = new View.OnClickListener()
++    {
++
++        @Override
++        public void onClick(View v)
++        {
++            String str;
++            if (Flag.equals("mAuth")) {
++                FirebaseUser user = mAuth.getCurrentUser();
++                str = user.getUid();
++            }
++            else
++            {
++                str=id;
++            }
++            FirebaseDatabase database = FirebaseDatabase.getInstance();
++            DatabaseReference myRef = database.getReference(str);
++
++            myRef.child("first_name").setValue(first_name.getText().toString());
++            myRef.child("second_name").setValue(second_name.getText().toString());
++
++        }
++    };
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/slideshow/SlideshowViewModel.java b/app/src/main/java/com/example/examplereg/ui/slideshow/SlideshowViewModel.java
+new file mode 100644
+index 0000000..8e8c63d
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/slideshow/SlideshowViewModel.java
+@@ -0,0 +1,19 @@
++package com.example.examplereg.ui.slideshow;
++
++import androidx.lifecycle.LiveData;
++import androidx.lifecycle.MutableLiveData;
++import androidx.lifecycle.ViewModel;
++
++public class SlideshowViewModel extends ViewModel {
++
++    private MutableLiveData<String> mText;
++
++    public SlideshowViewModel() {
++        mText = new MutableLiveData<>();
++        mText.setValue("This is slideshow fragment");
++    }
++
++    public LiveData<String> getText() {
++        return mText;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/tools/ToolsFragment.java b/app/src/main/java/com/example/examplereg/ui/tools/ToolsFragment.java
+new file mode 100644
+index 0000000..e1556bf
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/tools/ToolsFragment.java
+@@ -0,0 +1,35 @@
++package com.example.examplereg.ui.tools;
++
++import android.os.Bundle;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.TextView;
++
++import androidx.annotation.Nullable;
++import androidx.annotation.NonNull;
++import androidx.fragment.app.Fragment;
++import androidx.lifecycle.Observer;
++import androidx.lifecycle.ViewModelProviders;
++
++import com.example.examplereg.R;
++
++public class ToolsFragment extends Fragment {
++
++    private ToolsViewModel toolsViewModel;
++
++    public View onCreateView(@NonNull LayoutInflater inflater,
++                             ViewGroup container, Bundle savedInstanceState) {
++        toolsViewModel =
++                ViewModelProviders.of(this).get(ToolsViewModel.class);
++        View root = inflater.inflate(R.layout.fragment_tools, container, false);
++        final TextView textView = root.findViewById(R.id.text_tools);
++        toolsViewModel.getText().observe(this, new Observer<String>() {
++            @Override
++            public void onChanged(@Nullable String s) {
++                textView.setText(s);
++            }
++        });
++        return root;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/java/com/example/examplereg/ui/tools/ToolsViewModel.java b/app/src/main/java/com/example/examplereg/ui/tools/ToolsViewModel.java
+new file mode 100644
+index 0000000..4877f35
+--- /dev/null
++++ b/app/src/main/java/com/example/examplereg/ui/tools/ToolsViewModel.java
+@@ -0,0 +1,19 @@
++package com.example.examplereg.ui.tools;
++
++import androidx.lifecycle.LiveData;
++import androidx.lifecycle.MutableLiveData;
++import androidx.lifecycle.ViewModel;
++
++public class ToolsViewModel extends ViewModel {
++
++    private MutableLiveData<String> mText;
++
++    public ToolsViewModel() {
++        mText = new MutableLiveData<>();
++        mText.setValue("This is tools fragment");
++    }
++
++    public LiveData<String> getText() {
++        return mText;
++    }
++}
+\ No newline at end of file
+diff --git a/app/src/main/res/drawable-v21/ic_menu_camera.xml b/app/src/main/res/drawable-v21/ic_menu_camera.xml
+new file mode 100644
+index 0000000..634fe92
+--- /dev/null
++++ b/app/src/main/res/drawable-v21/ic_menu_camera.xml
+@@ -0,0 +1,12 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24.0"
++    android:viewportHeight="24.0">
++    <path
++        android:fillColor="#FF000000"
++        android:pathData="M12,12m-3.2,0a3.2,3.2 0,1 1,6.4 0a3.2,3.2 0,1 1,-6.4 0" />
++    <path
++        android:fillColor="#FF000000"
++        android:pathData="M9,2L7.17,4H4c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V6c0,-1.1 -0.9,-2 -2,-2h-3.17L15,2H9zm3,15c-2.76,0 -5,-2.24 -5,-5s2.24,-5 5,-5 5,2.24 5,5 -2.24,5 -5,5z" />
++</vector>
+diff --git a/app/src/main/res/drawable-v21/ic_menu_gallery.xml b/app/src/main/res/drawable-v21/ic_menu_gallery.xml
+new file mode 100644
+index 0000000..03c7709
+--- /dev/null
++++ b/app/src/main/res/drawable-v21/ic_menu_gallery.xml
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24.0"
++    android:viewportHeight="24.0">
++    <path
++        android:fillColor="#FF000000"
++        android:pathData="M22,16V4c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2zm-11,-4l2.03,2.71L16,11l4,5H8l3,-4zM2,6v14c0,1.1 0.9,2 2,2h14v-2H4V6H2z" />
++</vector>
+diff --git a/app/src/main/res/drawable-v21/ic_menu_manage.xml b/app/src/main/res/drawable-v21/ic_menu_manage.xml
+new file mode 100644
+index 0000000..aeb047d
+--- /dev/null
++++ b/app/src/main/res/drawable-v21/ic_menu_manage.xml
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24.0"
++    android:viewportHeight="24.0">
++    <path
++        android:fillColor="#FF000000"
++        android:pathData="M22.7,19l-9.1,-9.1c0.9,-2.3 0.4,-5 -1.5,-6.9 -2,-2 -5,-2.4 -7.4,-1.3L9,6 6,9 1.6,4.7C0.4,7.1 0.9,10.1 2.9,12.1c1.9,1.9 4.6,2.4 6.9,1.5l9.1,9.1c0.4,0.4 1,0.4 1.4,0l2.3,-2.3c0.5,-0.4 0.5,-1.1 0.1,-1.4z" />
++</vector>
+\ No newline at end of file
+diff --git a/app/src/main/res/drawable-v21/ic_menu_send.xml b/app/src/main/res/drawable-v21/ic_menu_send.xml
+new file mode 100644
+index 0000000..fdf1c90
+--- /dev/null
++++ b/app/src/main/res/drawable-v21/ic_menu_send.xml
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24.0"
++    android:viewportHeight="24.0">
++    <path
++        android:fillColor="#FF000000"
++        android:pathData="M2.01,21L23,12 2.01,3 2,10l15,2 -15,2z" />
++</vector>
+diff --git a/app/src/main/res/drawable-v21/ic_menu_share.xml b/app/src/main/res/drawable-v21/ic_menu_share.xml
+new file mode 100644
+index 0000000..338d95a
+--- /dev/null
++++ b/app/src/main/res/drawable-v21/ic_menu_share.xml
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24.0"
++    android:viewportHeight="24.0">
++    <path
++        android:fillColor="#FF000000"
++        android:pathData="M18,16.08c-0.76,0 -1.44,0.3 -1.96,0.77L8.91,12.7c0.05,-0.23 0.09,-0.46 0.09,-0.7s-0.04,-0.47 -0.09,-0.7l7.05,-4.11c0.54,0.5 1.25,0.81 2.04,0.81 1.66,0 3,-1.34 3,-3s-1.34,-3 -3,-3 -3,1.34 -3,3c0,0.24 0.04,0.47 0.09,0.7L8.04,9.81C7.5,9.31 6.79,9 6,9c-1.66,0 -3,1.34 -3,3s1.34,3 3,3c0.79,0 1.5,-0.31 2.04,-0.81l7.12,4.16c-0.05,0.21 -0.08,0.43 -0.08,0.65 0,1.61 1.31,2.92 2.92,2.92 1.61,0 2.92,-1.31 2.92,-2.92s-1.31,-2.92 -2.92,-2.92z" />
++</vector>
+diff --git a/app/src/main/res/drawable-v21/ic_menu_slideshow.xml b/app/src/main/res/drawable-v21/ic_menu_slideshow.xml
+new file mode 100644
+index 0000000..5e9e163
+--- /dev/null
++++ b/app/src/main/res/drawable-v21/ic_menu_slideshow.xml
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24.0"
++    android:viewportHeight="24.0">
++    <path
++        android:fillColor="#FF000000"
++        android:pathData="M4,6H2v14c0,1.1 0.9,2 2,2h14v-2H4V6zm16,-4H8c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2V4c0,-1.1 -0.9,-2 -2,-2zm-8,12.5v-9l6,4.5 -6,4.5z" />
++</vector>
+diff --git a/app/src/main/res/drawable/side_nav_bar.xml b/app/src/main/res/drawable/side_nav_bar.xml
+new file mode 100644
+index 0000000..6d81870
+--- /dev/null
++++ b/app/src/main/res/drawable/side_nav_bar.xml
+@@ -0,0 +1,9 @@
++<shape xmlns:android="http://schemas.android.com/apk/res/android"
++    android:shape="rectangle">
++    <gradient
++        android:angle="135"
++        android:centerColor="#009688"
++        android:endColor="#00695C"
++        android:startColor="#4DB6AC"
++        android:type="linear" />
++</shape>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
+index c2883bc..a4f3cc1 100644
+--- a/app/src/main/res/layout/activity_main.xml
++++ b/app/src/main/res/layout/activity_main.xml
+@@ -24,6 +24,7 @@
+         android:ems="10"
+         android:inputType="textPersonName"
+         android:stateListAnimator="@null"
++        android:text="admin@yandex.ru"
+         android:translationZ="10dp"
+         app:layout_constraintBottom_toBottomOf="parent"
+         app:layout_constraintEnd_toEndOf="parent"
+@@ -102,6 +103,7 @@
+         android:inputType="textPassword"
+ 
+         android:stateListAnimator="@null"
++        android:text="adminadmin"
+         android:translationZ="10dp"
+         app:layout_constraintBottom_toBottomOf="parent"
+         app:layout_constraintEnd_toEndOf="parent"
+diff --git a/app/src/main/res/layout/activity_main__navigation.xml b/app/src/main/res/layout/activity_main__navigation.xml
+new file mode 100644
+index 0000000..80fcc05
+--- /dev/null
++++ b/app/src/main/res/layout/activity_main__navigation.xml
+@@ -0,0 +1,25 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:id="@+id/drawer_layout"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:fitsSystemWindows="true"
++    tools:openDrawer="start">
++
++    <include
++        layout="@layout/app_bar_main_activity__navigation"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent" />
++
++    <com.google.android.material.navigation.NavigationView
++        android:id="@+id/nav_view"
++        android:layout_width="wrap_content"
++        android:layout_height="match_parent"
++        android:layout_gravity="start"
++        android:fitsSystemWindows="true"
++        app:headerLayout="@layout/nav_header_main_activity__navigation"
++        app:menu="@menu/activity_main__navigation_drawer" />
++
++</androidx.drawerlayout.widget.DrawerLayout>
+diff --git a/app/src/main/res/layout/app_bar_main_activity__navigation.xml b/app/src/main/res/layout/app_bar_main_activity__navigation.xml
+new file mode 100644
+index 0000000..d98adc5
+--- /dev/null
++++ b/app/src/main/res/layout/app_bar_main_activity__navigation.xml
+@@ -0,0 +1,33 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    tools:context=".MainActivity_Navigation">
++
++    <com.google.android.material.appbar.AppBarLayout
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:theme="@style/AppTheme.AppBarOverlay">
++
++        <androidx.appcompat.widget.Toolbar
++            android:id="@+id/toolbar"
++            android:layout_width="match_parent"
++            android:layout_height="?attr/actionBarSize"
++            android:background="?attr/colorPrimary"
++            app:popupTheme="@style/AppTheme.PopupOverlay" />
++
++    </com.google.android.material.appbar.AppBarLayout>
++
++    <include layout="@layout/content_main_activity__navigation" />
++
++    <com.google.android.material.floatingactionbutton.FloatingActionButton
++        android:id="@+id/fab"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_gravity="bottom|end"
++        android:layout_margin="@dimen/fab_margin"
++        app:srcCompat="@android:drawable/ic_dialog_email" />
++
++</androidx.coordinatorlayout.widget.CoordinatorLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/content_main_activity__navigation.xml b/app/src/main/res/layout/content_main_activity__navigation.xml
+new file mode 100644
+index 0000000..04b67fd
+--- /dev/null
++++ b/app/src/main/res/layout/content_main_activity__navigation.xml
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    app:layout_behavior="@string/appbar_scrolling_view_behavior"
++    tools:showIn="@layout/app_bar_main">
++
++    <fragment
++        android:id="@+id/nav_host_fragment"
++        android:name="androidx.navigation.fragment.NavHostFragment"
++        android:layout_width="match_parent"
++        android:layout_height="match_parent"
++        app:defaultNavHost="true"
++        app:layout_constraintLeft_toLeftOf="parent"
++        app:layout_constraintRight_toRightOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:navGraph="@navigation/mobile_navigation" />
++</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/fragment_gallery.xml b/app/src/main/res/layout/fragment_gallery.xml
+new file mode 100644
+index 0000000..63332f9
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_gallery.xml
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <TextView
++        android:id="@+id/text_gallery"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:layout_marginEnd="8dp"
++        android:textAlignment="center"
++        android:textSize="20sp"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/fragment_home.xml b/app/src/main/res/layout/fragment_home.xml
+new file mode 100644
+index 0000000..ba19445
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_home.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"/>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/fragment_send.xml b/app/src/main/res/layout/fragment_send.xml
+new file mode 100644
+index 0000000..5f5d116
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_send.xml
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <TextView
++        android:id="@+id/text_send"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:layout_marginEnd="8dp"
++        android:textAlignment="center"
++        android:textSize="20sp"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/fragment_share.xml b/app/src/main/res/layout/fragment_share.xml
+new file mode 100644
+index 0000000..5854a8d
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_share.xml
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <TextView
++        android:id="@+id/text_share"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:layout_marginEnd="8dp"
++        android:textAlignment="center"
++        android:textSize="20sp"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/fragment_slideshow.xml b/app/src/main/res/layout/fragment_slideshow.xml
+new file mode 100644
+index 0000000..4379836
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_slideshow.xml
+@@ -0,0 +1,70 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <TextView
++        android:id="@+id/First_Name"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="First Name"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.111"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.286" />
++
++    <TextView
++        android:id="@+id/Second_Name"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="Second Name"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.118"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.478" />
++
++    <EditText
++        android:id="@+id/editText"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:ems="10"
++        android:inputType="textPersonName"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.449"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.371" />
++
++    <EditText
++        android:id="@+id/editText2"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:ems="10"
++        android:inputType="textPersonName"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.449"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.569" />
++
++    <Button
++        android:id="@+id/button"
++        android:layout_width="157dp"
++        android:layout_height="46dp"
++        android:text="Сохранить"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.498"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        app:layout_constraintVertical_bias="0.696" />
++
++</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/fragment_tools.xml b/app/src/main/res/layout/fragment_tools.xml
+new file mode 100644
+index 0000000..b88fee8
+--- /dev/null
++++ b/app/src/main/res/layout/fragment_tools.xml
+@@ -0,0 +1,19 @@
++<?xml version="1.0" encoding="utf-8"?>
++<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent">
++
++    <TextView
++        android:id="@+id/text_tools"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:layout_marginEnd="8dp"
++        android:textAlignment="center"
++        android:textSize="20sp"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++</androidx.constraintlayout.widget.ConstraintLayout>
+\ No newline at end of file
+diff --git a/app/src/main/res/layout/nav_header_main_activity__navigation.xml b/app/src/main/res/layout/nav_header_main_activity__navigation.xml
+new file mode 100644
+index 0000000..4c3439a
+--- /dev/null
++++ b/app/src/main/res/layout/nav_header_main_activity__navigation.xml
+@@ -0,0 +1,36 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="@dimen/nav_header_height"
++    android:background="@drawable/side_nav_bar"
++    android:gravity="bottom"
++    android:orientation="vertical"
++    android:paddingLeft="@dimen/activity_horizontal_margin"
++    android:paddingTop="@dimen/activity_vertical_margin"
++    android:paddingRight="@dimen/activity_horizontal_margin"
++    android:paddingBottom="@dimen/activity_vertical_margin"
++    android:theme="@style/ThemeOverlay.AppCompat.Dark">
++
++    <ImageView
++        android:id="@+id/imageView"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:contentDescription="@string/nav_header_desc"
++        android:paddingTop="@dimen/nav_header_vertical_spacing"
++        app:srcCompat="@mipmap/ic_launcher_round" />
++
++    <TextView
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:paddingTop="@dimen/nav_header_vertical_spacing"
++        android:text="@string/nav_header_title"
++        android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
++
++    <TextView
++        android:id="@+id/textView"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="@string/nav_header_subtitle" />
++
++</LinearLayout>
+diff --git a/app/src/main/res/menu/activity_main__navigation_drawer.xml b/app/src/main/res/menu/activity_main__navigation_drawer.xml
+new file mode 100644
+index 0000000..d7124e6
+--- /dev/null
++++ b/app/src/main/res/menu/activity_main__navigation_drawer.xml
+@@ -0,0 +1,38 @@
++<?xml version="1.0" encoding="utf-8"?>
++<menu xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools"
++    tools:showIn="navigation_view">
++
++    <group android:checkableBehavior="single">
++        <item
++            android:id="@+id/nav_home"
++            android:icon="@drawable/ic_menu_camera"
++            android:title="@string/menu_home" />
++        <item
++            android:id="@+id/nav_gallery"
++            android:icon="@drawable/ic_menu_gallery"
++            android:title="@string/menu_gallery" />
++        <item
++            android:id="@+id/nav_slideshow"
++            android:icon="@drawable/ic_menu_slideshow"
++            android:title="@string/menu_slideshow" />
++        <item
++            android:id="@+id/nav_tools"
++            android:icon="@drawable/ic_menu_manage"
++            android:title="@string/menu_tools" />
++    </group>
++
++    <item android:title="Communicate">
++        <menu>
++            <item
++                android:id="@+id/nav_share"
++                android:icon="@drawable/ic_menu_share"
++                android:title="@string/menu_share" />
++            <item
++                android:id="@+id/nav_send"
++                android:icon="@drawable/ic_menu_send"
++                android:title="@string/menu_send" />
++        </menu>
++    </item>
++
++</menu>
+diff --git a/app/src/main/res/menu/main_activity__navigation.xml b/app/src/main/res/menu/main_activity__navigation.xml
+new file mode 100644
+index 0000000..a2411e3
+--- /dev/null
++++ b/app/src/main/res/menu/main_activity__navigation.xml
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="utf-8"?>
++<menu xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto">
++    <item
++        android:id="@+id/action_settings"
++        android:orderInCategory="100"
++        android:title="@string/action_settings"
++        app:showAsAction="never" />
++</menu>
+diff --git a/app/src/main/res/navigation/mobile_navigation.xml b/app/src/main/res/navigation/mobile_navigation.xml
+new file mode 100644
+index 0000000..d4e1240
+--- /dev/null
++++ b/app/src/main/res/navigation/mobile_navigation.xml
+@@ -0,0 +1,43 @@
++<?xml version="1.0" encoding="utf-8"?>
++<navigation xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:id="@+id/mobile_navigation"
++    app:startDestination="@+id/nav_home">
++
++    <fragment
++        android:id="@+id/nav_home"
++        android:name="com.example.examplereg.ui.home.HomeFragment"
++        android:label="@string/menu_home"
++        tools:layout="@layout/fragment_home" />
++
++    <fragment
++        android:id="@+id/nav_gallery"
++        android:name="com.example.examplereg.ui.gallery.GalleryFragment"
++        android:label="@string/menu_gallery"
++        tools:layout="@layout/fragment_gallery" />
++
++    <fragment
++        android:id="@+id/nav_slideshow"
++        android:name="com.example.examplereg.ui.slideshow.SlideshowFragment"
++        android:label="@string/menu_slideshow"
++        tools:layout="@layout/fragment_slideshow" />
++
++    <fragment
++        android:id="@+id/nav_tools"
++        android:name="com.example.examplereg.ui.tools.ToolsFragment"
++        android:label="@string/menu_tools"
++        tools:layout="@layout/fragment_tools" />
++
++    <fragment
++        android:id="@+id/nav_share"
++        android:name="com.example.examplereg.ui.share.ShareFragment"
++        android:label="@string/menu_share"
++        tools:layout="@layout/fragment_share" />
++
++    <fragment
++        android:id="@+id/nav_send"
++        android:name="com.example.examplereg.ui.send.SendFragment"
++        android:label="@string/menu_send"
++        tools:layout="@layout/fragment_send" />
++</navigation>
+\ No newline at end of file
+diff --git a/app/src/main/res/values-v21/styles.xml b/app/src/main/res/values-v21/styles.xml
+new file mode 100644
+index 0000000..fd7a058
+--- /dev/null
++++ b/app/src/main/res/values-v21/styles.xml
+@@ -0,0 +1,8 @@
++<resources>
++
++    <style name="AppTheme.NoActionBar">
++        <item name="windowActionBar">false</item>
++        <item name="windowNoTitle">true</item>
++        <item name="android:statusBarColor">@android:color/transparent</item>
++    </style>
++</resources>
+diff --git a/app/src/main/res/values/dimens.xml b/app/src/main/res/values/dimens.xml
+new file mode 100644
+index 0000000..4ab4520
+--- /dev/null
++++ b/app/src/main/res/values/dimens.xml
+@@ -0,0 +1,8 @@
++<resources>
++    <!-- Default screen margins, per the Android Design guidelines. -->
++    <dimen name="activity_horizontal_margin">16dp</dimen>
++    <dimen name="activity_vertical_margin">16dp</dimen>
++    <dimen name="nav_header_vertical_spacing">8dp</dimen>
++    <dimen name="nav_header_height">176dp</dimen>
++    <dimen name="fab_margin">16dp</dimen>
++</resources>
+\ No newline at end of file
+diff --git a/app/src/main/res/values/drawables.xml b/app/src/main/res/values/drawables.xml
+new file mode 100644
+index 0000000..52c6a6c
+--- /dev/null
++++ b/app/src/main/res/values/drawables.xml
+@@ -0,0 +1,8 @@
++<resources xmlns:android="http://schemas.android.com/apk/res/android">
++    <item name="ic_menu_camera" type="drawable">@android:drawable/ic_menu_camera</item>
++    <item name="ic_menu_gallery" type="drawable">@android:drawable/ic_menu_gallery</item>
++    <item name="ic_menu_slideshow" type="drawable">@android:drawable/ic_menu_slideshow</item>
++    <item name="ic_menu_manage" type="drawable">@android:drawable/ic_menu_manage</item>
++    <item name="ic_menu_share" type="drawable">@android:drawable/ic_menu_share</item>
++    <item name="ic_menu_send" type="drawable">@android:drawable/ic_menu_send</item>
++</resources>
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index a324e8d..0556185 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -1,4 +1,18 @@
+ <resources>
+     <string name="app_name">ExampleReg</string>
+     <integer name="com_vk_sdk_AppId">7225522</integer>
++    <string name="title_activity_main__navigation">MainActivity_Navigation</string>
++    <string name="navigation_drawer_open">Open navigation drawer</string>
++    <string name="navigation_drawer_close">Close navigation drawer</string>
++    <string name="nav_header_title">Android Studio</string>
++    <string name="nav_header_subtitle">android.studio@android.com</string>
++    <string name="nav_header_desc">Navigation header</string>
++    <string name="action_settings">Settings</string>
++
++    <string name="menu_home">Home</string>
++    <string name="menu_gallery">Gallery</string>
++    <string name="menu_slideshow">Account</string>
++    <string name="menu_tools">Tools</string>
++    <string name="menu_share">Share</string>
++    <string name="menu_send">Send</string>
+ </resources>
+diff --git a/app/src/main/res/values/styles.xml b/app/src/main/res/values/styles.xml
+index 5885930..545b9c6 100644
+--- a/app/src/main/res/values/styles.xml
++++ b/app/src/main/res/values/styles.xml
+@@ -8,4 +8,13 @@
+         <item name="colorAccent">@color/colorAccent</item>
+     </style>
+ 
++    <style name="AppTheme.NoActionBar">
++        <item name="windowActionBar">false</item>
++        <item name="windowNoTitle">true</item>
++    </style>
++
++    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
++
++    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
++
+ </resources>
