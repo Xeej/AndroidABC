@@ -16,4 +16,5 @@
     <string name="menu_share">Share</string>
     <string name="menu_send">Send</string>
     <string name="title_activity_maps">Map</string>
+    <string name="google_maps">google_map</string>
 </resources>

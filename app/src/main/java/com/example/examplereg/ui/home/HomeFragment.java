@@ -1,15 +1,13 @@
 package com.example.examplereg.ui.home;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
+
 
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
@@ -17,27 +15,18 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
-import com.example.examplereg.MainActivity;
-import com.example.examplereg.MainActivity_Navigation;
-import com.example.examplereg.MapsActivity;
+
 import com.example.examplereg.R;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapsInitializer;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.osmdroid.api.IMapController;
-import org.osmdroid.config.Configuration;
-import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.util.MapTileIndex;
+
 import org.osmdroid.views.MapView;
 
 
 
+
 public class HomeFragment extends Fragment  {
+
 
     private HomeViewModel homeViewModel;
     GoogleMap mGoogleMap;

@@ -2,8 +2,15 @@ package com.example.examplereg;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.app.AlertDialog;
+import android.app.Application;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -45,7 +52,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+
+
+
+
+
+
 public class MainActivity extends AppCompatActivity {
+
+
 
 
     private FirebaseAuth mAuth;
@@ -63,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
     EditText pass;
     TextView label;
 
-
+    Intent MainActivity2;
 
     public void updateUI()
     {
@@ -78,8 +93,10 @@ public class MainActivity extends AppCompatActivity {
         myRef.child(str).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange( DataSnapshot dataSnapshot) {
-                GenericTypeIndicator<HashMap<String,String>> t = new GenericTypeIndicator<HashMap<String,String>>() {};
-                DiscrTasks = dataSnapshot.getValue(t);
+                for (DataSnapshot dsp : dataSnapshot.getChildren()) {
+                    GenericTypeIndicator<HashMap<String,String>> t = new GenericTypeIndicator<HashMap<String,String>>() {};
+                    DiscrTasks = dsp.getValue(t);
+                }
                 Intent MainActivity2 = new Intent(MainActivity.this, MainActivity_Navigation.class);
                 MainActivity2.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 MainActivity2.putExtra("first_name", ""+DiscrTasks.get("first_name").toString());
@@ -105,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         myRef = FirebaseDatabase.getInstance().getReference();
 
-
+        MainActivity2 = new Intent(MainActivity.this, MainActivity_Navigation.class);
         mAuth = FirebaseAuth.getInstance();
 
         //String[] fingerprints = VKUtil.getCertificateFingerprint(this, this.getPackageName());
@@ -160,8 +177,8 @@ public class MainActivity extends AppCompatActivity {
                                 FirebaseDatabase database = FirebaseDatabase.getInstance();
                                 DatabaseReference myRef = database.getReference(str);
 
-                                myRef.child("first_name").setValue("InsertName");
-                                myRef.child("second_name").setValue("InsertName");
+                                myRef.child("Information").child("first_name").setValue("InsertName");
+                                myRef.child("Information").child("second_name").setValue("InsertName");
                                 Toast.makeText(MainActivity.this, "Регистрация успешна", Toast.LENGTH_SHORT).show();
 
                             }
@@ -187,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
                         if(task.isSuccessful()) {
 
                             updateUI();
+
                             Toast.makeText( MainActivity.this, "Aвторизация успешна", Toast.LENGTH_SHORT).show();
 
                         }else
@@ -222,7 +240,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResult(VKAccessToken res) {
 // Пользователь успешно авторизовался
-
                 Toast.makeText(MainActivity.this, "Aвторизация успешна", Toast.LENGTH_SHORT).show();
                 AccessTOKEN =res;
                 VKRequest request = VKApi.users().get(VKParameters.from(VKApiConst.FIELDS,"first_name, last_name"));
@@ -247,8 +264,8 @@ public class MainActivity extends AppCompatActivity {
                             String var = AccessTOKEN.accessToken.toString();
                             DatabaseReference myRef = database.getReference(id);
 
-                            myRef.child("first_name").setValue(firstname);
-                            myRef.child("second_name").setValue(secondname);
+                            myRef.child("Information").child("first_name").setValue(firstname);
+                            myRef.child("Information").child("second_name").setValue(secondname);
 
                             Intent MainActivity2 = new Intent(MainActivity.this, MainActivity_Navigation.class);
                             MainActivity2.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);

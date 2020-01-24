@@ -1,5 +1,6 @@
 package com.example.examplereg;
 
+import androidx.annotation.ColorRes;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -10,6 +11,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -20,21 +22,38 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private LocationManager locationManager;
-
+    private LatLng Lastlatlng;
     LocationListener locationListener=new LocationListener() {
         @Override
         public void onLocationChanged(android.location.Location location) {
             double latitude=location.getLatitude();
             double longitude=location.getLongitude();
-            String msg="New Latitude: "+latitude + "New Longitude: "+longitude;
+            String msg="New Cordinates:"+latitude + ": "+longitude;
             Toast.makeText(MapsActivity.this,msg, Toast.LENGTH_LONG).show();
+           /* MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(new LatLng(location.getLatitude(),location.getLongitude()));
+            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));*/
+            mMap.addPolyline(new PolylineOptions()
+                    .add(Lastlatlng)
+                    .add(new LatLng(latitude,longitude)).width(8F)
+                    .color(Color.RED));
+            Lastlatlng = new LatLng(latitude,longitude);
+           // Polyline polyline = mMap.addPolyline(polyOptions);
+            //polylines.add(polyline);
+
+          //  mMap.addPolyline(new PolylineOptions().add(new LatLng(latitude,longitude)));
         }
 
         @Override
@@ -54,6 +73,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Toast.makeText(MapsActivity.this,"onProviderDisabled", Toast.LENGTH_LONG).show();
         }
     };
+
+
+
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 777;
 
     public boolean checkLocationPermission() {
@@ -105,7 +127,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             == PackageManager.PERMISSION_GRANTED) {
 
                         //Request location updates:
-                       // locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 40,1,locationListener);
+                        // locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 40,1,locationListener);
                         Toast.makeText(MapsActivity.this,"Permission accept", Toast.LENGTH_LONG).show();
                     }
 
@@ -121,10 +143,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
-
-
-
+public double youlg,yoult;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -140,25 +159,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 40,1,locationListener);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000,5,locationListener);
 
            // Toast.makeText(MapsActivity.this,var.toString(), Toast.LENGTH_LONG).show();
 
-            boolean isEnabledGPS = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            if (isEnabledGPS)
-            {
-
-                Double var=0.0;
-               Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
+               Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                  if (location!=null)
                  {
-                     var = location.getLatitude();
+                     youlg=location.getLongitude();
+                     yoult=location.getLatitude();
                  }
-
-                Toast.makeText(MapsActivity.this,"true"+var.toString(), Toast.LENGTH_LONG).show();
-            }
-            else Toast.makeText(MapsActivity.this,"false", Toast.LENGTH_LONG).show();
+            else Toast.makeText(MapsActivity.this,"No Permissions", Toast.LENGTH_LONG).show();
         }
 
 
@@ -181,10 +192,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+        mMap.setMyLocationEnabled(true);
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        LatLng you = new LatLng(yoult,youlg);
+       // mMap.addMarker(new MarkerOptions().position(you).title("Its you"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(you));
+        Lastlatlng = you;
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(you,17));
+
+
+        /*mMap.addPolyline(new PolylineOptions()
+                .add(Lastlatlng)
+                .add(new LatLng(33,34))
+                .add(new LatLng(23,34)).width(8F)
+                .color(Color.RED));*/
+
     }
 }

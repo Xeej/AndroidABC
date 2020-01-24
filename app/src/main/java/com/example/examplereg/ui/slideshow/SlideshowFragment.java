@@ -83,9 +83,8 @@ public class SlideshowFragment extends Fragment {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
             DatabaseReference myRef = database.getReference(str);
 
-            myRef.child("first_name").setValue(first_name.getText().toString());
-            myRef.child("second_name").setValue(second_name.getText().toString());
-
+            myRef.child("Information").child("first_name").setValue(first_name.getText().toString());
+            myRef.child("Information").child("second_name").setValue(second_name.getText().toString());
         }
     };
 }
