@@ -105,14 +105,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             == PackageManager.PERMISSION_GRANTED) {
 
                         //Request location updates:
-                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 40,1,locationListener);
-
+                       // locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 40,1,locationListener);
+                        Toast.makeText(MapsActivity.this,"Permission accept", Toast.LENGTH_LONG).show();
                     }
 
                 } else {
 
                     //пермишен не был получее =(
-
+                    Toast.makeText(MapsActivity.this,"Permission disabled", Toast.LENGTH_LONG).show();
 
                 }
                 return;
@@ -120,6 +120,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
     }
+
 
 
 
@@ -139,11 +140,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-            Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 40,1,locationListener);
 
-            Double var = location.getLatitude();
+           // Toast.makeText(MapsActivity.this,var.toString(), Toast.LENGTH_LONG).show();
 
-            Toast.makeText(MapsActivity.this,var.toString(), Toast.LENGTH_LONG).show();
+            boolean isEnabledGPS = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            if (isEnabledGPS)
+            {
+
+                Double var=0.0;
+               Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                 if (location!=null)
+                 {
+                     var = location.getLatitude();
+                 }
+
+                Toast.makeText(MapsActivity.this,"true"+var.toString(), Toast.LENGTH_LONG).show();
+            }
+            else Toast.makeText(MapsActivity.this,"false", Toast.LENGTH_LONG).show();
         }
 
 
