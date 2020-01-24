@@ -145,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View v)
         {
+
             mAuth.createUserWithEmailAndPassword(log.getText().toString(), pass.getText().toString())
                     .addOnCompleteListener(new OnCompleteListener<AuthResult>()
                     {
@@ -178,6 +179,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v)
             {
+
+
                 mAuth.signInWithEmailAndPassword(log.getText().toString(), pass.getText().toString()).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {

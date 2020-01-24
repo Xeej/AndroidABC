@@ -43,12 +43,15 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.0.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.0.0'
     implementation 'com.google.firebase:firebase-database:16.0.4'
+    implementation 'com.google.android.gms:play-services-maps:17.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
-    implementation 'org.osmdroid:osmdroid-android:6.1.1'
-    implementation 'org.osmdroid:osmdroid-third-party:6.0.1'
+    implementation files('C:\\Users\\1\\Desktop\\slf4j-android-1.5.8')
+    implementation files('C:\\Users\\1\\Desktop\\osmdroid-third-party-4.0')
+    /*implementation 'org.osmdroid:osmdroid-android:6.1.5'
+    implementation 'org.osmdroid:osmdroid-third-party:6.1.1'
     implementation 'org.osmdroid:osmdroid-wms:6.1.5'
     implementation 'org.osmdroid:osmdroid-mapsforge:6.1.5'
-    implementation 'org.osmdroid:osmdroid-geopackage:6.1.5'
+    implementation 'org.osmdroid:osmdroid-geopackage:6.1.5'*/
 }

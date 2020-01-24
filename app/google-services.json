@@ -1,9 +1,9 @@
 {
   "project_info": {
-    "project_number": "980331253183",
-    "firebase_url": "https://examplereg-f97fe.firebaseio.com",
-    "project_id": "examplereg-f97fe",
-    "storage_bucket": "examplereg-f97fe.appspot.com"
+    "project_number": "641493166619",
+    "firebase_url": "https://examplereg-dcea6.firebaseio.com",
+    "project_id": "examplereg-dcea6",
+    "storage_bucket": "examplereg-dcea6.appspot.com"
   },
   "client": [
     {
@@ -37,7 +37,7 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAPd5XfAMVTR6lOj-AMFFq28kt8OVAEvRg"
+          "current_key": "AIzaSyAwrz7c9CUn8WoxKBI5opvpBX4mJrQUqNc"
         }
       ],
       "services": {
